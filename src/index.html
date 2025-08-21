@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>QuickPaste Debug Interface</title>
+    <title>QuickPaste Debug Interface (Brave Compatible)</title>
     <style>
         * {
             margin: 0;
@@ -41,6 +41,18 @@
         .subtitle {
             color: #718096;
             font-size: 14px;
+        }
+
+        .server-status {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: #48bb78;
+            color: white;
+            border-radius: 8px;
+            font-size: 13px;
+            margin-top: 10px;
         }
 
         .controls {
@@ -301,6 +313,13 @@
         <div class="header">
             <h1 class="title">QuickPaste Debug Interface</h1>
             <p class="subtitle">Paste or drop screenshots for quick debugging sessions</p>
+            <div class="server-status">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                </svg>
+                Works with Brave! Server-based saving
+            </div>
         </div>
 
         <div class="stats">
@@ -377,11 +396,9 @@
     <div class="toast" id="toast"></div>
 
     <script>
-        class QuickPasteDebugger {
+        class QuickPasteBrave {
             constructor() {
                 this.config = {
-                    toBeScannedFolder: './to-be-scanned/',
-                    alreadyScannedFolder: './already-scanned/',
                     fileNamePattern: 'screenshot-{timestamp}.png',
                     maxDisplayImages: 50,
                     animationDuration: 300
@@ -391,7 +408,6 @@
                 this.sessionStartTime = Date.now();
                 
                 this.initializeElements();
-                this.loadConfig();
                 this.setupEventListeners();
                 this.loadExistingImages();
             }
@@ -409,19 +425,6 @@
                     alreadyScannedCount: document.getElementById('alreadyScannedCount'),
                     sessionCount: document.getElementById('sessionCount')
                 };
-            }
-
-            async loadConfig() {
-                try {
-                    const response = await fetch('./config.json');
-                    if (response.ok) {
-                        const loadedConfig = await response.json();
-                        this.config = { ...this.config, ...loadedConfig };
-                        console.log('Config loaded:', this.config);
-                    }
-                } catch (error) {
-                    console.log('Using default config:', error);
-                }
             }
 
             setupEventListeners() {
@@ -511,61 +514,53 @@
                 const timestamp = Date.now();
                 const fileName = this.config.fileNamePattern.replace('{timestamp}', timestamp);
                 
-                // Create image object
-                const imageObj = {
-                    id: `img-${timestamp}`,
-                    fileName: fileName,
-                    timestamp: timestamp,
-                    blob: blob,
-                    url: URL.createObjectURL(blob),
-                    selected: false
-                };
-
-                // Add to images array
-                this.images.push(imageObj);
-                
-                // Update display
-                this.renderImage(imageObj);
-                this.updateStats();
-                
-                // Save to file system (attempt)
-                await this.saveImageToFileSystem(blob, fileName);
-                
-                this.showToast(`Image saved: ${fileName}`, 'success');
-            }
-
-            async saveImageToFileSystem(blob, fileName) {
-                // Try using File System Access API
-                if ('showSaveFilePicker' in window) {
+                // Convert to base64
+                const reader = new FileReader();
+                reader.onloadend = async () => {
+                    const base64 = reader.result;
+                    
+                    // Send to server
                     try {
-                        // Note: This would need user interaction for each save
-                        // For automatic saving, we'd need a different approach
-                        console.log('Would save:', fileName);
+                        const response = await fetch('/api/upload-base64', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({
+                                imageData: base64,
+                                filename: fileName
+                            })
+                        });
                         
-                        // Store in localStorage as base64 for persistence
-                        const reader = new FileReader();
-                        reader.onloadend = () => {
-                            const base64 = reader.result;
-                            const stored = JSON.parse(localStorage.getItem('quickpaste_images') || '[]');
-                            stored.push({
-                                fileName,
-                                data: base64,
-                                timestamp: Date.now()
-                            });
-                            // Keep only last 50 images in localStorage
-                            if (stored.length > 50) {
-                                stored.shift();
-                            }
-                            localStorage.setItem('quickpaste_images', JSON.stringify(stored));
-                        };
-                        reader.readAsDataURL(blob);
+                        if (response.ok) {
+                            const result = await response.json();
+                            
+                            // Create image object
+                            const imageObj = {
+                                id: `img-${timestamp}`,
+                                fileName: result.filename,
+                                timestamp: timestamp,
+                                url: URL.createObjectURL(blob),
+                                selected: false
+                            };
+
+                            // Add to images array
+                            this.images.push(imageObj);
+                            
+                            // Update display
+                            this.renderImage(imageObj);
+                            this.updateStats();
+                            
+                            this.showToast(`✅ Image saved to disk: ${result.filename}`, 'success');
+                        } else {
+                            this.showToast('Failed to save image to server', 'error');
+                        }
                     } catch (error) {
-                        console.error('Save error:', error);
+                        console.error('Upload error:', error);
+                        this.showToast('Server connection error. Is the server running?', 'error');
                     }
-                } else {
-                    // Fallback: Store in localStorage
-                    console.log('File System API not available, using localStorage');
-                }
+                };
+                reader.readAsDataURL(blob);
             }
 
             renderImage(imageObj) {
@@ -578,6 +573,7 @@
                 const card = document.createElement('div');
                 card.className = 'image-card';
                 card.dataset.imageId = imageObj.id;
+                card.dataset.filename = imageObj.fileName;
                 
                 const checkbox = document.createElement('input');
                 checkbox.type = 'checkbox';
@@ -635,26 +631,29 @@
                 this.showToast('Display cleared (files preserved)', 'info');
             }
 
-            moveSelected() {
+            async moveSelected() {
                 const selected = this.images.filter(img => img.selected);
                 if (selected.length === 0) {
                     this.showToast('No images selected', 'error');
                     return;
                 }
 
-                // Move logic would go here
-                // For now, just remove from display
-                selected.forEach(img => {
-                    const card = document.querySelector(`[data-image-id="${img.id}"]`);
-                    if (card) {
-                        card.remove();
+                // Move files on server
+                for (const img of selected) {
+                    try {
+                        await fetch(`/api/move/${img.fileName}`, { method: 'POST' });
+                        
+                        // Remove from display
+                        const card = document.querySelector(`[data-image-id="${img.id}"]`);
+                        if (card) card.remove();
+                        
+                        // Remove from images array
+                        const index = this.images.indexOf(img);
+                        if (index > -1) this.images.splice(index, 1);
+                    } catch (error) {
+                        console.error('Move error:', error);
                     }
-                    // Remove from images array
-                    const index = this.images.indexOf(img);
-                    if (index > -1) {
-                        this.images.splice(index, 1);
-                    }
-                });
+                }
 
                 this.updateStats();
                 this.showToast(`Moved ${selected.length} image(s) to already-scanned`, 'success');
@@ -670,38 +669,32 @@
                     return;
                 }
 
-                // Clear localStorage
-                localStorage.removeItem('quickpaste_images');
+                // Delete all files from server
+                for (const img of this.images) {
+                    try {
+                        await fetch(`/api/images/to-be-scanned/${img.fileName}`, { method: 'DELETE' });
+                    } catch (error) {
+                        console.error('Delete error:', error);
+                    }
+                }
                 
                 // Clear display
                 this.clearDisplay();
-                
-                // In real implementation, would delete actual files
                 this.showToast('All files purged from disk', 'info');
             }
 
-            loadExistingImages() {
-                // Load from localStorage
-                const stored = JSON.parse(localStorage.getItem('quickpaste_images') || '[]');
+            async loadExistingImages() {
+                try {
+                    const response = await fetch('/api/images/to-be-scanned');
+                    if (response.ok) {
+                        const images = await response.json();
+                        // Could render existing images here if desired
+                        this.elements.toBeScannedCount.textContent = images.length;
+                    }
+                } catch (error) {
+                    console.log('Could not load existing images:', error);
+                }
                 
-                stored.forEach(item => {
-                    // Convert base64 back to blob
-                    fetch(item.data)
-                        .then(res => res.blob())
-                        .then(blob => {
-                            const imageObj = {
-                                id: `img-${item.timestamp}`,
-                                fileName: item.fileName,
-                                timestamp: item.timestamp,
-                                blob: blob,
-                                url: URL.createObjectURL(blob),
-                                selected: false
-                            };
-                            this.images.push(imageObj);
-                            this.renderImage(imageObj);
-                        });
-                });
-
                 this.updateStats();
             }
 
@@ -709,10 +702,20 @@
                 // Update session count
                 this.elements.sessionCount.textContent = this.images.length;
                 
-                // These would be updated based on actual file system in real implementation
-                const stored = JSON.parse(localStorage.getItem('quickpaste_images') || '[]');
-                this.elements.toBeScannedCount.textContent = stored.length;
-                this.elements.alreadyScannedCount.textContent = '0';
+                // Fetch actual counts from server
+                fetch('/api/images/to-be-scanned')
+                    .then(res => res.json())
+                    .then(images => {
+                        this.elements.toBeScannedCount.textContent = images.length;
+                    })
+                    .catch(() => {});
+                    
+                fetch('/api/images/scanned')
+                    .then(res => res.json())
+                    .then(images => {
+                        this.elements.alreadyScannedCount.textContent = images.length;
+                    })
+                    .catch(() => {});
             }
 
             showToast(message, type = 'info') {
@@ -728,7 +731,7 @@
 
         // Initialize when DOM is ready
         document.addEventListener('DOMContentLoaded', () => {
-            new QuickPasteDebugger();
+            new QuickPasteBrave();
         });
     </script>
 </body>

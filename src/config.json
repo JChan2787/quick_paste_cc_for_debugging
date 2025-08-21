@@ -1,8 +1,0 @@
-{
-  "toBeScannedFolder": "../data/to-be-scanned/",
-  "alreadyScannedFolder": "../data/already-scanned/",
-  "fileNamePattern": "screenshot-{timestamp}.png",
-  "maxDisplayImages": 50,
-  "gridColumns": "auto-fit",
-  "animationDuration": 300
-}
