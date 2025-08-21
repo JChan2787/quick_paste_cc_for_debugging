@@ -101,33 +101,6 @@
             background: #38a169;
         }
 
-        .stats {
-            display: flex;
-            gap: 20px;
-            flex-wrap: wrap;
-            margin-bottom: 20px;
-        }
-
-        .stat-card {
-            background: rgba(255, 255, 255, 0.9);
-            padding: 10px 20px;
-            border-radius: 10px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-
-        .stat-label {
-            font-size: 12px;
-            color: #718096;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-
-        .stat-value {
-            font-size: 24px;
-            font-weight: 700;
-            color: #2d3748;
-        }
-
         .image-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -289,20 +262,6 @@
             </div>
         </div>
 
-        <div class="stats">
-            <div class="stat-card">
-                <div class="stat-label">To Be Scanned</div>
-                <div class="stat-value" id="toBeScannedCount">0</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-label">Already Scanned</div>
-                <div class="stat-value" id="alreadyScannedCount">0</div>
-            </div>
-            <div class="stat-card">
-                <div class="stat-label">Current Session</div>
-                <div class="stat-value" id="sessionCount">0</div>
-            </div>
-        </div>
 
         <div class="controls">
             <button class="btn btn-paste" id="pasteBtn" title="Paste from clipboard (Ctrl+V)">
@@ -370,10 +329,7 @@
                     clearBtn: document.getElementById('clearBtn'),
                     imageGrid: document.getElementById('imageGrid'),
                     dropOverlay: document.getElementById('dropOverlay'),
-                    toast: document.getElementById('toast'),
-                    toBeScannedCount: document.getElementById('toBeScannedCount'),
-                    alreadyScannedCount: document.getElementById('alreadyScannedCount'),
-                    sessionCount: document.getElementById('sessionCount')
+                    toast: document.getElementById('toast')
                 };
             }
 
@@ -492,7 +448,7 @@
                             
                             // Update display
                             this.renderImage(imageObj);
-                            this.updateStats();
+                            // Stats update removed
                             
                             this.showToast(`✅ Image saved to disk: ${result.filename}`, 'success');
                         } else {
@@ -562,7 +518,7 @@
                 
                 // Clear from memory but not from disk
                 this.images = [];
-                this.updateStats();
+                // Stats update removed
                 this.showToast('Display cleared (files preserved)', 'info');
             }
 
@@ -572,34 +528,15 @@
                     if (response.ok) {
                         const images = await response.json();
                         // Could render existing images here if desired
-                        this.elements.toBeScannedCount.textContent = images.length;
+                        // Metrics removed - no longer tracking counts
                     }
                 } catch (error) {
                     console.log('Could not load existing images:', error);
                 }
                 
-                this.updateStats();
+                // Stats update removed
             }
 
-            updateStats() {
-                // Update session count
-                this.elements.sessionCount.textContent = this.images.length;
-                
-                // Fetch actual counts from server
-                fetch('/api/images/to-be-scanned')
-                    .then(res => res.json())
-                    .then(images => {
-                        this.elements.toBeScannedCount.textContent = images.length;
-                    })
-                    .catch(() => {});
-                    
-                fetch('/api/images/scanned')
-                    .then(res => res.json())
-                    .then(images => {
-                        this.elements.alreadyScannedCount.textContent = images.length;
-                    })
-                    .catch(() => {});
-            }
 
             showToast(message, type = 'info') {
                 this.elements.toast.className = `toast ${type}`;
