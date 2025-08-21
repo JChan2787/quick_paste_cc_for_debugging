@@ -6,6 +6,9 @@ echo "   QuickPaste Debug Interface"
 echo "============================================"
 echo ""
 
+# Navigate to quick_paste directory
+cd quick_paste
+
 # Check if Node.js is installed
 if ! command -v node &> /dev/null; then
     echo "ERROR: Node.js is not installed"

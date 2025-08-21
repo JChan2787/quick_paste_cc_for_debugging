@@ -16,8 +16,8 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }));
 // Serve static files from src directory
 app.use(express.static('src'));
 
-// Ensure directories exist
-const dataDir = path.join(__dirname, 'data');
+// Ensure directories exist (data folder is at root, one level up)
+const dataDir = path.join(__dirname, '..', 'data');
 const toBeScannedDir = path.join(dataDir, 'to-be-scanned');
 const alreadyScannedDir = path.join(dataDir, 'already-scanned');
 

@@ -1,47 +1,47 @@
 @echo off
+
 echo.
 echo ============================================
-echo   QuickPaste Debug Interface
+echo    QuickPaste Debug Interface
 echo ============================================
 echo.
 
+REM Navigate to quick_paste directory
+cd quick_paste
+
 REM Check if Node.js is installed
-node --version >nul 2>&1
+where node >nul 2>nul
 if %errorlevel% neq 0 (
-    echo ERROR: Node.js is not installed or not in PATH
+    echo ERROR: Node.js is not installed
     echo Please install Node.js from https://nodejs.org
     pause
-    exit /b 1
+    exit /b
 )
 
 REM Check if dependencies are installed
-if not exist node_modules (
+if not exist "node_modules" (
     echo Installing dependencies...
-    npm install
+    call npm install
     echo.
 )
 
 echo Starting server...
 echo.
 
-REM Wait a moment before opening browser
-timeout /t 2 /nobreak >nul
-
-REM Open in default browser using rundll32 (properly respects Windows default)
-echo Opening in your default browser...
-rundll32 url.dll,FileProtocolHandler http://localhost:8000/
+REM Open browser after a delay
+start /b cmd /c "timeout /t 2 >nul && rundll32 url.dll,FileProtocolHandler http://localhost:8000/"
 
 echo.
 echo ============================================
-echo   Server is running!
-echo   
-echo   URL: http://localhost:8000/
-echo   
-echo   ✅ Works with ALL browsers
-echo   ✅ Files save to data\to-be-scanned\
-echo   
-echo   Keep this window open!
-echo   Press Ctrl+C to stop the server
+echo    Server is running!
+echo    
+echo    URL: http://localhost:8000/
+echo    
+echo    Works with ALL browsers
+echo    Files save to data/to-be-scanned/
+echo    
+echo    Keep this window open!
+echo    Press Ctrl+C to stop the server
 echo ============================================
 echo.
 

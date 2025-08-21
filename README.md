@@ -82,12 +82,19 @@ image-uploader-tool/
 ├── data/
 │   ├── to-be-scanned/     # New screenshots saved here
 │   └── already-scanned/   # (Reserved for future use)
-├── src/
-│   └── index.html         # Main application file
-├── server.js              # Node.js backend server
-├── start.bat              # Windows launcher
-├── start.sh               # Unix/macOS launcher
-└── package.json           # Project dependencies
+├── quick_paste/
+│   ├── src/
+│   │   └── index.html     # Main application file
+│   ├── server.js          # Node.js backend server
+│   ├── package.json       # Project dependencies
+│   ├── start.bat          # Windows launcher (internal)
+│   ├── start.sh           # Unix/macOS launcher (internal)
+│   └── node_modules/      # Dependencies (auto-generated)
+├── start.bat              # Windows launcher (root)
+├── start.sh               # Unix/macOS launcher (root)
+├── README.md              # This file
+├── LICENSE                # MIT License
+└── .gitignore             # Git ignore rules
 ```
 
 ## Configuration
@@ -96,17 +103,17 @@ image-uploader-tool/
 
 If port 8000 is already in use, edit these files:
 
-1. In `server.js`:
+1. In `quick_paste/server.js`:
 ```javascript
 const PORT = 8000;  // Change to your preferred port
 ```
 
-2. In `start.bat` (Windows):
+2. In `quick_paste/start.bat` (Windows):
 ```batch
 rundll32 url.dll,FileProtocolHandler http://localhost:8000/
 ```
 
-3. In `start.sh` (Unix/macOS):
+3. In `quick_paste/start.sh` (Unix/macOS):
 ```bash
 URL="http://localhost:8000/"
 ```
@@ -178,8 +185,8 @@ DELETE /api/images/:folder/:filename  // (Reserved)
 
 The codebase is intentionally simple and hackable:
 
-- `src/index.html` - All frontend code in one file
-- `server.js` - Straightforward Express server
+- `quick_paste/src/index.html` - All frontend code in one file
+- `quick_paste/server.js` - Straightforward Express server
 - No build process required
 - No complex dependencies
 
