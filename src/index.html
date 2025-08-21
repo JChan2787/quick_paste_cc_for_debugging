@@ -110,15 +110,6 @@
             background: #e53e3e;
         }
 
-        .btn-move {
-            background: #4299e1;
-            color: white;
-        }
-
-        .btn-move:hover {
-            background: #3182ce;
-        }
-
         .stats {
             display: flex;
             gap: 20px;
@@ -186,21 +177,6 @@
         .image-card:hover {
             transform: translateY(-5px);
             box-shadow: 0 8px 12px rgba(0, 0, 0, 0.15);
-        }
-
-        .image-card.selected {
-            outline: 3px solid #667eea;
-            outline-offset: -3px;
-        }
-
-        .image-card input[type="checkbox"] {
-            position: absolute;
-            top: 10px;
-            left: 10px;
-            width: 20px;
-            height: 20px;
-            cursor: pointer;
-            z-index: 10;
         }
 
         .image-wrapper {
@@ -352,12 +328,6 @@
                 </svg>
                 Clear Display
             </button>
-            <button class="btn btn-move" id="moveBtn" title="Move selected to already scanned">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <path d="M12 2v20M17 7l-5-5-5 5M17 17l-5 5-5-5"></path>
-                </svg>
-                Move Selected
-            </button>
             <button class="btn btn-purge" id="purgeBtn" title="Delete files from disk">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                     <polyline points="3 6 5 6 21 6"></polyline>
@@ -416,7 +386,6 @@
                 this.elements = {
                     pasteBtn: document.getElementById('pasteBtn'),
                     clearBtn: document.getElementById('clearBtn'),
-                    moveBtn: document.getElementById('moveBtn'),
                     purgeBtn: document.getElementById('purgeBtn'),
                     imageGrid: document.getElementById('imageGrid'),
                     dropOverlay: document.getElementById('dropOverlay'),
@@ -436,9 +405,6 @@
                 
                 // Clear display button
                 this.elements.clearBtn.addEventListener('click', () => this.clearDisplay());
-                
-                // Move selected button
-                this.elements.moveBtn.addEventListener('click', () => this.moveSelected());
                 
                 // Purge files button
                 this.elements.purgeBtn.addEventListener('click', () => this.purgeFiles());
@@ -540,8 +506,7 @@
                                 id: `img-${timestamp}`,
                                 fileName: result.filename,
                                 timestamp: timestamp,
-                                url: URL.createObjectURL(blob),
-                                selected: false
+                                url: URL.createObjectURL(blob)
                             };
 
                             // Add to images array
@@ -575,13 +540,6 @@
                 card.dataset.imageId = imageObj.id;
                 card.dataset.filename = imageObj.fileName;
                 
-                const checkbox = document.createElement('input');
-                checkbox.type = 'checkbox';
-                checkbox.addEventListener('change', (e) => {
-                    imageObj.selected = e.target.checked;
-                    card.classList.toggle('selected', e.target.checked);
-                });
-
                 const wrapper = document.createElement('div');
                 wrapper.className = 'image-wrapper';
                 
@@ -604,7 +562,6 @@
                 info.appendChild(filename);
                 info.appendChild(time);
                 
-                card.appendChild(checkbox);
                 card.appendChild(wrapper);
                 card.appendChild(info);
                 
@@ -629,39 +586,6 @@
                 this.images = [];
                 this.updateStats();
                 this.showToast('Display cleared (files preserved)', 'info');
-            }
-
-            async moveSelected() {
-                const selected = this.images.filter(img => img.selected);
-                if (selected.length === 0) {
-                    this.showToast('No images selected', 'error');
-                    return;
-                }
-
-                // Move files on server
-                for (const img of selected) {
-                    try {
-                        await fetch(`/api/move/${img.fileName}`, { method: 'POST' });
-                        
-                        // Remove from display
-                        const card = document.querySelector(`[data-image-id="${img.id}"]`);
-                        if (card) card.remove();
-                        
-                        // Remove from images array
-                        const index = this.images.indexOf(img);
-                        if (index > -1) this.images.splice(index, 1);
-                    } catch (error) {
-                        console.error('Move error:', error);
-                    }
-                }
-
-                this.updateStats();
-                this.showToast(`Moved ${selected.length} image(s) to already-scanned`, 'success');
-
-                // Check if grid is empty
-                if (this.images.length === 0) {
-                    this.clearDisplay();
-                }
             }
 
             async purgeFiles() {
