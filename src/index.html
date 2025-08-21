@@ -101,15 +101,6 @@
             background: #38a169;
         }
 
-        .btn-purge {
-            background: #f56565;
-            color: white;
-        }
-
-        .btn-purge:hover {
-            background: #e53e3e;
-        }
-
         .stats {
             display: flex;
             gap: 20px;
@@ -328,15 +319,6 @@
                 </svg>
                 Clear Display
             </button>
-            <button class="btn btn-purge" id="purgeBtn" title="Delete files from disk">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <polyline points="3 6 5 6 21 6"></polyline>
-                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                    <line x1="10" y1="11" x2="10" y2="17"></line>
-                    <line x1="14" y1="11" x2="14" y2="17"></line>
-                </svg>
-                Purge Files
-            </button>
         </div>
 
         <div class="image-grid empty" id="imageGrid">
@@ -386,7 +368,6 @@
                 this.elements = {
                     pasteBtn: document.getElementById('pasteBtn'),
                     clearBtn: document.getElementById('clearBtn'),
-                    purgeBtn: document.getElementById('purgeBtn'),
                     imageGrid: document.getElementById('imageGrid'),
                     dropOverlay: document.getElementById('dropOverlay'),
                     toast: document.getElementById('toast'),
@@ -405,9 +386,6 @@
                 
                 // Clear display button
                 this.elements.clearBtn.addEventListener('click', () => this.clearDisplay());
-                
-                // Purge files button
-                this.elements.purgeBtn.addEventListener('click', () => this.purgeFiles());
                 
                 // Drag and drop
                 document.addEventListener('dragover', (e) => this.handleDragOver(e));
@@ -586,25 +564,6 @@
                 this.images = [];
                 this.updateStats();
                 this.showToast('Display cleared (files preserved)', 'info');
-            }
-
-            async purgeFiles() {
-                if (!confirm('This will delete all image files from disk. Are you sure?')) {
-                    return;
-                }
-
-                // Delete all files from server
-                for (const img of this.images) {
-                    try {
-                        await fetch(`/api/images/to-be-scanned/${img.fileName}`, { method: 'DELETE' });
-                    } catch (error) {
-                        console.error('Delete error:', error);
-                    }
-                }
-                
-                // Clear display
-                this.clearDisplay();
-                this.showToast('All files purged from disk', 'info');
             }
 
             async loadExistingImages() {
