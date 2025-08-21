@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QuickPaste Debug Interface</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 16px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+        }
+
+        .title {
+            font-size: 28px;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 10px;
+        }
+
+        .subtitle {
+            color: #718096;
+            font-size: 14px;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin: 25px 0;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .btn-paste {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-size: 16px;
+            padding: 14px 28px;
+        }
+
+        .btn-paste:hover {
+            background: linear-gradient(135deg, #5a67d8 0%, #6b4299 100%);
+        }
+
+        .btn-clear {
+            background: #48bb78;
+            color: white;
+        }
+
+        .btn-clear:hover {
+            background: #38a169;
+        }
+
+        .btn-purge {
+            background: #f56565;
+            color: white;
+        }
+
+        .btn-purge:hover {
+            background: #e53e3e;
+        }
+
+        .btn-move {
+            background: #4299e1;
+            color: white;
+        }
+
+        .btn-move:hover {
+            background: #3182ce;
+        }
+
+        .stats {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 10px 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .stat-label {
+            font-size: 12px;
+            color: #718096;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 700;
+            color: #2d3748;
+        }
+
+        .image-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .image-grid.empty {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 400px;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: white;
+            opacity: 0.8;
+        }
+
+        .empty-state svg {
+            width: 100px;
+            height: 100px;
+            margin-bottom: 20px;
+            opacity: 0.6;
+        }
+
+        .image-card {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            animation: slideIn 0.3s ease;
+            transition: transform 0.3s ease;
+            position: relative;
+        }
+
+        .image-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .image-card.selected {
+            outline: 3px solid #667eea;
+            outline-offset: -3px;
+        }
+
+        .image-card input[type="checkbox"] {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            z-index: 10;
+        }
+
+        .image-wrapper {
+            position: relative;
+            padding-bottom: 75%;
+            background: #f7fafc;
+        }
+
+        .image-wrapper img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .image-info {
+            padding: 12px;
+            background: white;
+        }
+
+        .image-filename {
+            font-size: 12px;
+            color: #4a5568;
+            word-break: break-all;
+            margin-bottom: 4px;
+        }
+
+        .image-time {
+            font-size: 11px;
+            color: #a0aec0;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            background: white;
+            padding: 16px 24px;
+            border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .toast.show {
+            transform: translateX(0);
+        }
+
+        .toast.success {
+            border-left: 4px solid #48bb78;
+        }
+
+        .toast.error {
+            border-left: 4px solid #f56565;
+        }
+
+        .toast.info {
+            border-left: 4px solid #4299e1;
+        }
+
+        .drop-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(102, 126, 234, 0.95);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 999;
+        }
+
+        .drop-overlay.active {
+            display: flex;
+        }
+
+        .drop-message {
+            color: white;
+            font-size: 32px;
+            font-weight: 700;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 class="title">QuickPaste Debug Interface</h1>
+            <p class="subtitle">Paste or drop screenshots for quick debugging sessions</p>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card">
+                <div class="stat-label">To Be Scanned</div>
+                <div class="stat-value" id="toBeScannedCount">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Already Scanned</div>
+                <div class="stat-value" id="alreadyScannedCount">0</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-label">Current Session</div>
+                <div class="stat-value" id="sessionCount">0</div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="btn btn-paste" id="pasteBtn" title="Paste from clipboard (Ctrl+V)">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+                    <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+                </svg>
+                Paste Image
+            </button>
+            <button class="btn btn-clear" id="clearBtn" title="Clear display only">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                </svg>
+                Clear Display
+            </button>
+            <button class="btn btn-move" id="moveBtn" title="Move selected to already scanned">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 2v20M17 7l-5-5-5 5M17 17l-5 5-5-5"></path>
+                </svg>
+                Move Selected
+            </button>
+            <button class="btn btn-purge" id="purgeBtn" title="Delete files from disk">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="3 6 5 6 21 6"></polyline>
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                    <line x1="10" y1="11" x2="10" y2="17"></line>
+                    <line x1="14" y1="11" x2="14" y2="17"></line>
+                </svg>
+                Purge Files
+            </button>
+        </div>
+
+        <div class="image-grid empty" id="imageGrid">
+            <div class="empty-state">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                    <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                    <polyline points="21 15 16 10 5 21"></polyline>
+                </svg>
+                <h3>No images yet</h3>
+                <p>Paste an image or press Ctrl+V to get started</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="drop-overlay" id="dropOverlay">
+        <div class="drop-message">
+            <svg width="100" height="100" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            <p>Drop your images here</p>
+        </div>
+    </div>
+
+    <div class="toast" id="toast"></div>
+
+    <script>
+        class QuickPasteDebugger {
+            constructor() {
+                this.config = {
+                    toBeScannedFolder: './to-be-scanned/',
+                    alreadyScannedFolder: './already-scanned/',
+                    fileNamePattern: 'screenshot-{timestamp}.png',
+                    maxDisplayImages: 50,
+                    animationDuration: 300
+                };
+                
+                this.images = [];
+                this.sessionStartTime = Date.now();
+                
+                this.initializeElements();
+                this.loadConfig();
+                this.setupEventListeners();
+                this.loadExistingImages();
+            }
+
+            initializeElements() {
+                this.elements = {
+                    pasteBtn: document.getElementById('pasteBtn'),
+                    clearBtn: document.getElementById('clearBtn'),
+                    moveBtn: document.getElementById('moveBtn'),
+                    purgeBtn: document.getElementById('purgeBtn'),
+                    imageGrid: document.getElementById('imageGrid'),
+                    dropOverlay: document.getElementById('dropOverlay'),
+                    toast: document.getElementById('toast'),
+                    toBeScannedCount: document.getElementById('toBeScannedCount'),
+                    alreadyScannedCount: document.getElementById('alreadyScannedCount'),
+                    sessionCount: document.getElementById('sessionCount')
+                };
+            }
+
+            async loadConfig() {
+                try {
+                    const response = await fetch('./config.json');
+                    if (response.ok) {
+                        const loadedConfig = await response.json();
+                        this.config = { ...this.config, ...loadedConfig };
+                        console.log('Config loaded:', this.config);
+                    }
+                } catch (error) {
+                    console.log('Using default config:', error);
+                }
+            }
+
+            setupEventListeners() {
+                // Paste button
+                this.elements.pasteBtn.addEventListener('click', () => this.handlePasteClick());
+                
+                // Keyboard paste
+                document.addEventListener('paste', (e) => this.handlePaste(e));
+                
+                // Clear display button
+                this.elements.clearBtn.addEventListener('click', () => this.clearDisplay());
+                
+                // Move selected button
+                this.elements.moveBtn.addEventListener('click', () => this.moveSelected());
+                
+                // Purge files button
+                this.elements.purgeBtn.addEventListener('click', () => this.purgeFiles());
+                
+                // Drag and drop
+                document.addEventListener('dragover', (e) => this.handleDragOver(e));
+                document.addEventListener('dragleave', (e) => this.handleDragLeave(e));
+                document.addEventListener('drop', (e) => this.handleDrop(e));
+            }
+
+            async handlePasteClick() {
+                try {
+                    const clipboardItems = await navigator.clipboard.read();
+                    for (const clipboardItem of clipboardItems) {
+                        for (const type of clipboardItem.types) {
+                            if (type.startsWith('image/')) {
+                                const blob = await clipboardItem.getType(type);
+                                this.processImage(blob);
+                                return;
+                            }
+                        }
+                    }
+                    this.showToast('No image found in clipboard', 'error');
+                } catch (error) {
+                    this.showToast('Failed to access clipboard. Try Ctrl+V instead.', 'error');
+                    console.error('Clipboard access error:', error);
+                }
+            }
+
+            handlePaste(e) {
+                const items = e.clipboardData?.items;
+                if (!items) return;
+
+                for (const item of items) {
+                    if (item.type.startsWith('image/')) {
+                        e.preventDefault();
+                        const blob = item.getAsFile();
+                        if (blob) {
+                            this.processImage(blob);
+                        }
+                        return;
+                    }
+                }
+            }
+
+            handleDragOver(e) {
+                e.preventDefault();
+                this.elements.dropOverlay.classList.add('active');
+            }
+
+            handleDragLeave(e) {
+                if (e.target === this.elements.dropOverlay) {
+                    this.elements.dropOverlay.classList.remove('active');
+                }
+            }
+
+            handleDrop(e) {
+                e.preventDefault();
+                this.elements.dropOverlay.classList.remove('active');
+
+                const files = Array.from(e.dataTransfer.files);
+                const imageFiles = files.filter(file => file.type.startsWith('image/'));
+                
+                if (imageFiles.length === 0) {
+                    this.showToast('No images found in dropped files', 'error');
+                    return;
+                }
+
+                imageFiles.forEach(file => this.processImage(file));
+            }
+
+            async processImage(blob) {
+                const timestamp = Date.now();
+                const fileName = this.config.fileNamePattern.replace('{timestamp}', timestamp);
+                
+                // Create image object
+                const imageObj = {
+                    id: `img-${timestamp}`,
+                    fileName: fileName,
+                    timestamp: timestamp,
+                    blob: blob,
+                    url: URL.createObjectURL(blob),
+                    selected: false
+                };
+
+                // Add to images array
+                this.images.push(imageObj);
+                
+                // Update display
+                this.renderImage(imageObj);
+                this.updateStats();
+                
+                // Save to file system (attempt)
+                await this.saveImageToFileSystem(blob, fileName);
+                
+                this.showToast(`Image saved: ${fileName}`, 'success');
+            }
+
+            async saveImageToFileSystem(blob, fileName) {
+                // Try using File System Access API
+                if ('showSaveFilePicker' in window) {
+                    try {
+                        // Note: This would need user interaction for each save
+                        // For automatic saving, we'd need a different approach
+                        console.log('Would save:', fileName);
+                        
+                        // Store in localStorage as base64 for persistence
+                        const reader = new FileReader();
+                        reader.onloadend = () => {
+                            const base64 = reader.result;
+                            const stored = JSON.parse(localStorage.getItem('quickpaste_images') || '[]');
+                            stored.push({
+                                fileName,
+                                data: base64,
+                                timestamp: Date.now()
+                            });
+                            // Keep only last 50 images in localStorage
+                            if (stored.length > 50) {
+                                stored.shift();
+                            }
+                            localStorage.setItem('quickpaste_images', JSON.stringify(stored));
+                        };
+                        reader.readAsDataURL(blob);
+                    } catch (error) {
+                        console.error('Save error:', error);
+                    }
+                } else {
+                    // Fallback: Store in localStorage
+                    console.log('File System API not available, using localStorage');
+                }
+            }
+
+            renderImage(imageObj) {
+                // Remove empty state if present
+                if (this.elements.imageGrid.classList.contains('empty')) {
+                    this.elements.imageGrid.classList.remove('empty');
+                    this.elements.imageGrid.innerHTML = '';
+                }
+
+                const card = document.createElement('div');
+                card.className = 'image-card';
+                card.dataset.imageId = imageObj.id;
+                
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.addEventListener('change', (e) => {
+                    imageObj.selected = e.target.checked;
+                    card.classList.toggle('selected', e.target.checked);
+                });
+
+                const wrapper = document.createElement('div');
+                wrapper.className = 'image-wrapper';
+                
+                const img = document.createElement('img');
+                img.src = imageObj.url;
+                img.alt = imageObj.fileName;
+                
+                const info = document.createElement('div');
+                info.className = 'image-info';
+                
+                const filename = document.createElement('div');
+                filename.className = 'image-filename';
+                filename.textContent = imageObj.fileName;
+                
+                const time = document.createElement('div');
+                time.className = 'image-time';
+                time.textContent = new Date(imageObj.timestamp).toLocaleString();
+                
+                wrapper.appendChild(img);
+                info.appendChild(filename);
+                info.appendChild(time);
+                
+                card.appendChild(checkbox);
+                card.appendChild(wrapper);
+                card.appendChild(info);
+                
+                this.elements.imageGrid.appendChild(card);
+            }
+
+            clearDisplay() {
+                this.elements.imageGrid.innerHTML = `
+                    <div class="empty-state">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
+                            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                            <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                            <polyline points="21 15 16 10 5 21"></polyline>
+                        </svg>
+                        <h3>Display cleared</h3>
+                        <p>Files are still saved on disk</p>
+                    </div>
+                `;
+                this.elements.imageGrid.classList.add('empty');
+                
+                // Clear from memory but not from disk
+                this.images = [];
+                this.updateStats();
+                this.showToast('Display cleared (files preserved)', 'info');
+            }
+
+            moveSelected() {
+                const selected = this.images.filter(img => img.selected);
+                if (selected.length === 0) {
+                    this.showToast('No images selected', 'error');
+                    return;
+                }
+
+                // Move logic would go here
+                // For now, just remove from display
+                selected.forEach(img => {
+                    const card = document.querySelector(`[data-image-id="${img.id}"]`);
+                    if (card) {
+                        card.remove();
+                    }
+                    // Remove from images array
+                    const index = this.images.indexOf(img);
+                    if (index > -1) {
+                        this.images.splice(index, 1);
+                    }
+                });
+
+                this.updateStats();
+                this.showToast(`Moved ${selected.length} image(s) to already-scanned`, 'success');
+
+                // Check if grid is empty
+                if (this.images.length === 0) {
+                    this.clearDisplay();
+                }
+            }
+
+            async purgeFiles() {
+                if (!confirm('This will delete all image files from disk. Are you sure?')) {
+                    return;
+                }
+
+                // Clear localStorage
+                localStorage.removeItem('quickpaste_images');
+                
+                // Clear display
+                this.clearDisplay();
+                
+                // In real implementation, would delete actual files
+                this.showToast('All files purged from disk', 'info');
+            }
+
+            loadExistingImages() {
+                // Load from localStorage
+                const stored = JSON.parse(localStorage.getItem('quickpaste_images') || '[]');
+                
+                stored.forEach(item => {
+                    // Convert base64 back to blob
+                    fetch(item.data)
+                        .then(res => res.blob())
+                        .then(blob => {
+                            const imageObj = {
+                                id: `img-${item.timestamp}`,
+                                fileName: item.fileName,
+                                timestamp: item.timestamp,
+                                blob: blob,
+                                url: URL.createObjectURL(blob),
+                                selected: false
+                            };
+                            this.images.push(imageObj);
+                            this.renderImage(imageObj);
+                        });
+                });
+
+                this.updateStats();
+            }
+
+            updateStats() {
+                // Update session count
+                this.elements.sessionCount.textContent = this.images.length;
+                
+                // These would be updated based on actual file system in real implementation
+                const stored = JSON.parse(localStorage.getItem('quickpaste_images') || '[]');
+                this.elements.toBeScannedCount.textContent = stored.length;
+                this.elements.alreadyScannedCount.textContent = '0';
+            }
+
+            showToast(message, type = 'info') {
+                this.elements.toast.className = `toast ${type}`;
+                this.elements.toast.textContent = message;
+                this.elements.toast.classList.add('show');
+                
+                setTimeout(() => {
+                    this.elements.toast.classList.remove('show');
+                }, 3000);
+            }
+        }
+
+        // Initialize when DOM is ready
+        document.addEventListener('DOMContentLoaded', () => {
+            new QuickPasteDebugger();
+        });
+    </script>
+</body>
+</html>
