@@ -9,6 +9,7 @@ import logging
 import sys
 import io
 import json
+import platform
 from pathlib import Path
 from typing import Dict, List, Optional, Any
 from datetime import datetime
@@ -39,6 +40,36 @@ BASE_DIR = Path(__file__).parent.parent.parent
 DATA_DIR = BASE_DIR / "data"
 TO_BE_SCANNED_DIR = DATA_DIR / "to-be-scanned"
 ALREADY_SCANNED_DIR = DATA_DIR / "already-scanned"
+
+def get_move_instructions() -> str:
+    """
+    Generate platform-specific move instructions for screenshots.
+    """
+    source = str(TO_BE_SCANNED_DIR.absolute())
+    dest = str(ALREADY_SCANNED_DIR.absolute())
+    
+    system = platform.system()
+    
+    if system == "Windows":
+        # For Windows, provide PowerShell command with proper escaping
+        # Using forward slashes which PowerShell accepts
+        source_clean = source.replace('\\', '/')
+        dest_clean = dest.replace('\\', '/')
+        return (
+            "After analyzing all screenshots, please move them to the already-scanned folder. "
+            f"On Windows, use PowerShell: Move-Item '{source_clean}/*.png' '{dest_clean}/' "
+            "Or use individual file moves if wildcards don't work."
+        )
+    elif system == "Darwin":  # macOS
+        return (
+            "After analyzing all screenshots, please move them to the already-scanned folder. "
+            f"On macOS, use: mv \"{source}\"/*.png \"{dest}/\""
+        )
+    else:  # Linux and others
+        return (
+            "After analyzing all screenshots, please move them to the already-scanned folder. "
+            f"On Linux, use: mv \"{source}\"/*.png \"{dest}/\""
+        )
 
 @mcp.resource("quickpaste://screenshots/to-be-scanned")
 async def get_unscanned_screenshots() -> str:
@@ -87,10 +118,7 @@ async def get_unscanned_screenshots() -> str:
                 "Use the Read tool to view each image file, then describe what you see. "
                 "Focus on any visual problems, layout issues, or unexpected behavior."
             ),
-            "post_analysis_instructions": (
-                "After analyzing all screenshots, please move them to the already-scanned folder using: "
-                f"mv \"{TO_BE_SCANNED_DIR.absolute()}/*.png\" \"{ALREADY_SCANNED_DIR.absolute()}/\""
-            )
+            "post_analysis_instructions": get_move_instructions()
         }
         
         return json.dumps(response, indent=2)
