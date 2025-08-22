@@ -1,0 +1,1 @@
+# QuickPaste MCP Server Package

@@ -1,0 +1,5 @@
+# QuickPaste MCP Dependencies
+# Python 3.10+ required
+
+# Core MCP Server
+fastmcp>=0.1.0
