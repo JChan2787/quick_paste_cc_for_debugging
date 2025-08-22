@@ -190,6 +190,11 @@ The codebase is intentionally simple and hackable:
 - No build process required
 - No complex dependencies
 
+## Upcoming Features
+
+### MCP Integration (Coming Soon)
+Optional Model Context Protocol (MCP) feature for enhanced clipboard and image management capabilities. This feature will allow seamless integration with AI-powered workflows while maintaining the tool's core standalone functionality.
+
 ## Contributing
 
 Feel free to fork and modify this tool for your needs. Some ideas for enhancement:
