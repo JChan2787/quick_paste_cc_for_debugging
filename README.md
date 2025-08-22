@@ -33,7 +33,9 @@ cd image-uploader-tool
 
 2. Install dependencies:
 ```bash
+cd quick_paste
 npm install
+cd ..
 ```
 
 ### Running the Tool
@@ -81,7 +83,7 @@ The tool will:
 image-uploader-tool/
 ├── data/
 │   ├── to-be-scanned/     # New screenshots saved here
-│   └── already-scanned/   # (Reserved for future use)
+│   └── already-scanned/   # Processed images (manually moved)
 ├── quick_paste/
 │   ├── src/
 │   │   └── index.html     # Main application file
@@ -90,6 +92,7 @@ image-uploader-tool/
 │   ├── start.bat          # Windows launcher (internal)
 │   ├── start.sh           # Unix/macOS launcher (internal)
 │   └── node_modules/      # Dependencies (auto-generated)
+├── quick_paste-mcp/       # MCP integration (in development)
 ├── start.bat              # Windows launcher (root)
 ├── start.sh               # Unix/macOS launcher (root)
 ├── README.md              # This file
@@ -208,10 +211,6 @@ Feel free to fork and modify this tool for your needs. Some ideas for enhancemen
 ## License
 
 MIT License - See LICENSE file for details
-
-## Acknowledgments
-
-Built with frustration and determination after fighting with browser clipboard APIs for too long. Sometimes the simple solution is the best solution.
 
 ---
 
