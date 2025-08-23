@@ -15,6 +15,7 @@ A lightweight, browser-based tool for quickly capturing and managing screenshots
 - **Cross-Browser**: Works with all modern browsers (Chrome, Firefox, Edge, Brave, Safari)
 - **No Cloud Dependencies**: Completely local - your images never leave your machine
 - **Platform Agnostic**: Works on Windows, macOS, and Linux
+- **MCP Integration**: Model Context Protocol support for AI assistant workflows
 
 ## Quick Start
 
@@ -22,6 +23,7 @@ A lightweight, browser-based tool for quickly capturing and managing screenshots
 
 - Node.js (v14 or higher) - [Download](https://nodejs.org/)
 - npm (comes with Node.js)
+- Python 3.8+ (for MCP integration)
 
 ### Installation
 
@@ -35,6 +37,13 @@ cd image-uploader-tool
 ```bash
 cd quick_paste
 npm install
+cd ..
+```
+
+3. (Optional) Install MCP dependencies:
+```bash
+cd quick_paste-mcp
+pip install -r requirements.txt
 cd ..
 ```
 
@@ -92,7 +101,12 @@ image-uploader-tool/
 │   ├── start.bat          # Windows launcher (internal)
 │   ├── start.sh           # Unix/macOS launcher (internal)
 │   └── node_modules/      # Dependencies (auto-generated)
-├── quick_paste-mcp/       # MCP integration (in development)
+├── quick_paste-mcp/       # MCP integration
+│   ├── src/
+│   │   └── server.py      # MCP server implementation
+│   ├── requirements.txt   # Python dependencies
+│   ├── run_server.py      # MCP server runner
+│   └── SETUP.md          # MCP setup instructions
 ├── start.bat              # Windows launcher (root)
 ├── start.sh               # Unix/macOS launcher (root)
 ├── README.md              # This file
@@ -193,10 +207,68 @@ The codebase is intentionally simple and hackable:
 - No build process required
 - No complex dependencies
 
-## Upcoming Features
+## MCP Integration (Model Context Protocol)
 
-### MCP Integration (Coming Soon)
-Optional Model Context Protocol (MCP) feature for enhanced clipboard and image management capabilities. This feature will allow seamless integration with AI-powered workflows while maintaining the tool's core standalone functionality.
+The QuickPaste tool now includes MCP support for seamless integration with AI assistants like Claude. This allows AI assistants to automatically analyze screenshots for UI issues, bugs, and other observations.
+
+### MCP Features
+
+- **Automatic Screenshot Discovery**: AI assistants can query for unprocessed screenshots
+- **Batch Analysis**: Process multiple screenshots in a single session
+- **Organized Workflow**: Screenshots automatically move from `to-be-scanned` to `already-scanned` after analysis
+- **Resource-based Access**: Clean API through MCP resources
+
+### Setting Up MCP
+
+**Step 1: Install MCP Server Dependencies**
+
+```bash
+cd quick_paste-mcp
+pip install -r requirements.txt
+```
+
+**Step 2: Configure Claude Desktop** (or other MCP-compatible clients):
+
+Add to your Claude configuration file:
+
+```json
+{
+  "mcpServers": {
+    "QuickPaste-MCP": {
+      "command": "python",
+      "args": ["/path/to/quick_paste-mcp/run_server.py"]
+    }
+  }
+}
+```
+
+**Step 3: Run the MCP Server**
+
+```bash
+cd quick_paste-mcp
+python run_server.py
+```
+
+### Using MCP with AI Assistants
+
+Once configured, AI assistants can:
+
+- Access screenshots via `@QuickPaste-MCP` mention
+- Query `quickpaste://screenshots/to-be-scanned` for new screenshots
+- Query `quickpaste://screenshots/already-scanned` for processed screenshots
+- Automatically analyze UI issues and move files after processing
+
+Example workflow:
+
+1. Paste screenshots into QuickPaste web interface
+2. Ask your AI assistant: "Check @QuickPaste-MCP for new screenshots"
+3. AI analyzes images and provides feedback on UI issues
+4. Screenshots automatically move to `already-scanned` folder
+
+**Pro Tip**: For best results with Claude Code, use a direct prompt like:
+> "I uploaded more screenshots. Use the QuickPaste MCP to look at them."
+
+This ensures Claude Code properly invokes the MCP tool rather than attempting direct file access.
 
 ## Contributing
 
